@@ -75,6 +75,7 @@ class WeaviateDocumentStore(BaseDocumentStore):
         embedding_field: str = "embedding",
         progress_bar: bool = True,
         duplicate_documents: str = "overwrite",
+        auto_create_schema: bool = True,
         recreate_index: bool = False,
     ):
         """
@@ -107,6 +108,8 @@ class WeaviateDocumentStore(BaseDocumentStore):
                                     skip: Ignore the duplicates documents
                                     overwrite: Update any existing documents with the same ID when adding documents.
                                     fail: an error is raised if the document ID of the document being added already exists.
+        :param auto_create_schema: If True (default), create schema and indexes if not present where schema/index
+                            would be needed in code. Otherwise, handle schema/index creation yourself
         :param recreate_index: If set to True, an existing Weaviate index will be deleted and a new one will be
             created using the config you are using for initialization. Be aware that all data in the old index will be
             lost if you choose to recreate the index.
@@ -156,6 +159,7 @@ class WeaviateDocumentStore(BaseDocumentStore):
         self.embedding_field = embedding_field
         self.progress_bar = progress_bar
         self.duplicate_documents = duplicate_documents
+        self.auto_create_schema = auto_create_schema
 
         self._create_schema_and_index(self.index, recreate_index=recreate_index)
         self.uuid_format_warning_raised = False
@@ -173,6 +177,8 @@ class WeaviateDocumentStore(BaseDocumentStore):
         Create a new index (schema/class in Weaviate) for storing documents in case if an
         index (schema) with the name doesn't exist already.
         """
+        if not self.auto_create_schema:
+            return
         index = self._sanitize_index_name(index) or self.index
 
         if self.custom_schema:
